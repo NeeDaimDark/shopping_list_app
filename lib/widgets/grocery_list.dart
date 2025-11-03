@@ -23,8 +23,6 @@ class _GroceryListState extends State<GroceryList> {
       'shopping-list.json',
     );
     final response = await http.get(url);
-    final Map<String, dynamic> listData = json.decode(response.body);
-    final List<GroceryItem> loadedItems = [];
     if (response.statusCode >= 400) {
       setState(() {
         _error = 'Something went wrong. Please try again later.';
@@ -32,7 +30,18 @@ class _GroceryListState extends State<GroceryList> {
 
       });
 
+
     }
+    if (response.body == 'null') {
+      setState(() {
+        _isLoading = false;
+
+      });
+      return;
+    }
+    final Map<String, dynamic> listData = json.decode(response.body);
+    final List<GroceryItem> loadedItems = [];
+
     for (final item in listData.entries) {
       final categoryTitle = item.value['category'];
       final category = categories.entries.firstWhere(
@@ -163,7 +172,9 @@ class _GroceryListState extends State<GroceryList> {
           ),
         ],
       ),
-      body: content,
+      body:  content
+
+
 
     );
   }
