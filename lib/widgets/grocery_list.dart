@@ -15,6 +15,8 @@ class GroceryList extends StatefulWidget {
 
 class _GroceryListState extends State<GroceryList> {
   List<GroceryItem> _groceryItems = [];
+  String? _error;
+  var _isLoading = true;
   void _loadItems() async {
     final url = Uri.https(
       'flutter-shopping-list-96126-default-rtdb.europe-west1.firebasedatabase.app',
@@ -23,6 +25,14 @@ class _GroceryListState extends State<GroceryList> {
     final response = await http.get(url);
     final Map<String, dynamic> listData = json.decode(response.body);
     final List<GroceryItem> loadedItems = [];
+    if (response.statusCode >= 400) {
+      setState(() {
+        _error = 'Something went wrong. Please try again later.';
+        _isLoading = false;
+
+      });
+
+    }
     for (final item in listData.entries) {
       final categoryTitle = item.value['category'];
       final category = categories.entries.firstWhere(
@@ -37,21 +47,29 @@ class _GroceryListState extends State<GroceryList> {
         ),
       );
 
+
     }
     setState(() {
       _groceryItems = loadedItems;
+      _isLoading = false;
     });
 
   }
 
 
   void _addItem() async {
-     await Navigator.of(context).push<GroceryItem>(
+     final newItem =await Navigator.of(context).push<GroceryItem>(
       MaterialPageRoute(
         builder: (ctx) => const NewItem(),
       ),
     );
-    _loadItems();
+    if (newItem == null) {
+      return;
+    }
+    setState(() {
+      _groceryItems.add(newItem);
+
+    });
 
   }
   void _removeItem(GroceryItem item) {
@@ -75,6 +93,12 @@ class _GroceryListState extends State<GroceryList> {
         ),
       ),
     );
+    if (_isLoading) {
+      content = const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+     else
     if (_groceryItems.isNotEmpty) {
       content = ListView.builder(
         itemCount: _groceryItems.length,
@@ -95,6 +119,17 @@ class _GroceryListState extends State<GroceryList> {
             ),
           );
         },
+      );
+    }
+    if (_error != null) {
+      content = Center(
+        child: Text(
+          _error!,
+          style: const TextStyle(
+            color: Colors.red,
+            fontSize: 18,
+          ),
+        ),
       );
     }
     return Scaffold(
